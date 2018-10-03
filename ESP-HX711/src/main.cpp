@@ -1,5 +1,11 @@
 #include <Arduino.h>
 #include "HX711.h"
+#include <Wire.h>
+#include <LiquidCrystal_I2C.h>
+
+#define SDA 1
+#define SCL 3
+LiquidCrystal_I2C lcd(0x3f, 16, 2);
 
 #define DOUT1 4
 #define CLK1 5
@@ -20,7 +26,6 @@ int readIndex = 0;
 double average = 0;
 uint32_t arrayScale[1000];
 unsigned long standCount = 0;
-unsigned long readSpeed = 0;
 boolean standState = false;
 
 HX711 scale1(DOUT1, CLK1);
@@ -64,20 +69,29 @@ void get_average()
 
 void setup()
 {
-  Serial.begin(57600);
-  Serial.println("Load Cell");
+  // Serial.begin(115200);
+  // Serial.println("Load Cell");
+
   scale1.set_scale(calibration_factor1);
   scale1.set_offset(zero_factor1);
 
   scale2.set_scale(calibration_factor2);
   scale2.set_offset(zero_factor2);
+
+  lcd.begin(SDA, SCL);
+
+  lcd.setCursor(0, 0);
+  lcd.print("  Weight Scale  ");
+  lcd.setCursor(0, 1);
+  lcd.print("                ");
+  delay(3000);
 }
 void loop()
 {
   get_average();
 
   standCount = 0;
-  while (average > 50.00)
+  while (average > 1.00)
   {
     get_average();
     arrayScale[standCount] = average;
@@ -100,7 +114,12 @@ void loop()
     }
 
     sumAVE = sumAVE / ((standCount - arraySize) - arraySize);
-    Serial.println(sumAVE);
+    lcd.setCursor(0, 0);
+    lcd.print("  Weight Scale  ");
+    lcd.setCursor(0, 1);
+    lcd.print("    ");
+    lcd.print(sumAVE);
+    lcd.print(" kg    ");
 
     standCount = 0;
     standState = false;
